@@ -16,6 +16,8 @@
 
 using System;
 using System.Net.Sockets;
+using SFML.Graphics;
+using System.Windows.Forms;
 
 namespace ToT
 {
@@ -24,13 +26,36 @@ namespace ToT
         static TcpClient client;
         static void Main(string[] args)
         {
-            client = new TcpClient("127.0.0.1", 8484);
-            
-            for(; ;)
+            try
             {
+                client = new TcpClient("127.0.0.1", 8484);
 
 
+
+                RenderWindow win = new RenderWindow(new SFML.Window.VideoMode(800, 600, 32), "ToT");
+                // Setup event handlers
+                win.Closed += new EventHandler(OnClosed);
+
+                while (win.IsOpen)
+                {
+                    win.DispatchEvents();
+
+                    win.Clear();
+                    win.Display();
+
+                }
             }
+            catch (Exception e)
+            {
+                MessageBox.Show("An Error Occured: " + e.Message, "ToT");
+                return;
+            }
+        }
+
+        private static void OnClosed(object sender, EventArgs e)
+        {
+            RenderWindow win = (RenderWindow)sender;
+            win.Close();
         }
     }
 }

@@ -31,9 +31,16 @@ namespace server
             Console.WriteLine("Client connected from: " + c.Client.RemoteEndPoint);
             for(; ;)
             {
+                try
+                {
+                    c.Client.Receive(data);
+                } catch (Exception e)
+                {
 
-                c.Client.Receive(data);
+                    Console.WriteLine("Client Disconnected.");
+                    return;
 
+                }
                 // Handle Packets
 
             }
