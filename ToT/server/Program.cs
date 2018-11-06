@@ -34,6 +34,18 @@ namespace server
                 try
                 {
                     c.Client.Receive(data);
+                    MessageBuffer b = new MessageBuffer(data);
+                    short opcode = b.ReadInt16();
+
+                    switch(opcode)
+                    {
+                        default:
+                            {
+                                Console.WriteLine("Unknown Packet: " + opcode);
+                                break;
+                            }
+                    }
+
                 } catch (Exception e)
                 {
 

@@ -18,6 +18,7 @@ using System;
 using System.Net.Sockets;
 using SFML.Graphics;
 using System.Windows.Forms;
+using System.IO;
 
 namespace ToT
 {
@@ -35,11 +36,24 @@ namespace ToT
                 RenderWindow win = new RenderWindow(new SFML.Window.VideoMode(800, 600, 32), "ToT");
                 // Setup event handlers
                 win.Closed += new EventHandler(OnClosed);
-
+                
                 while (win.IsOpen)
                 {
                     win.DispatchEvents();
 
+                    byte[] data = new byte[1024];
+                    client.Client.Receive(data);
+                    MessageBuffer b = new MessageBuffer(data);
+                    short opcode = b.ReadInt16();
+                    switch(opcode)
+                    {
+
+                        default:
+                            {
+                                break;
+                            }
+
+                    }
                     win.Clear();
                     win.Display();
 
