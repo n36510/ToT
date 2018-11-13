@@ -37,14 +37,25 @@ namespace server
                     MessageBuffer b = new MessageBuffer(data);
                     short opcode = b.ReadInt16();
 
-                    switch(opcode)
+                    if (opcode != 0) {
+
+                    switch (opcode)
                     {
+                        case (short)recvOps.login:
+                            {
+                                break;
+                            }
+                        case (short)recvOps.selectWorld:
+                            {
+                                break;
+                            }
                         default:
                             {
                                 Console.WriteLine("Unknown Packet: " + opcode);
                                 break;
                             }
                     }
+                }
 
                 } catch (Exception e)
                 {

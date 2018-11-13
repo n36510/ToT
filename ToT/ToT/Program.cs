@@ -17,44 +17,66 @@
 using System;
 using System.Net.Sockets;
 using SFML.Graphics;
+using System.Threading;
 using System.Windows.Forms;
-using System.IO;
+using MessageBox = System.Windows.Forms.MessageBox;
+using KeyEventArgs = SFML.Window.KeyEventArgs;
 
 namespace ToT
 {
     class Program
     {
         static TcpClient client;
-        static void Main(string[] args)
+        static void threadMain()
         {
-            try
+            byte[] data = new byte[1024];
+            for (; ; )
             {
-                client = new TcpClient("127.0.0.1", 8484);
-
-
-
-                RenderWindow win = new RenderWindow(new SFML.Window.VideoMode(800, 600, 32), "ToT");
-                // Setup event handlers
-                win.Closed += new EventHandler(OnClosed);
-                
-                while (win.IsOpen)
-                {
-                    win.DispatchEvents();
-
-                    byte[] data = new byte[1024];
+                try {
                     client.Client.Receive(data);
                     MessageBuffer b = new MessageBuffer(data);
                     short opcode = b.ReadInt16();
-                    switch(opcode)
+                    switch (opcode)
                     {
-
+                        case (short)recvOps.login:
+                            {
+                                break;
+                            }
+                        case (short)recvOps.selectWorld:
+                            {
+                                break;
+                            }
                         default:
                             {
                                 break;
                             }
 
                     }
+                }
+                catch (Exception e)
+                {
+                    break;
+                }
+            } 
+        }
+        static void Main(string[] args)
+        {
+            try
+            {
+                client = new TcpClient("127.0.0.1", 8484);
+
+                Thread t = new Thread(new ThreadStart(() => { threadMain(); }));
+                t.Start();
+                RenderWindow win = new RenderWindow(new SFML.Window.VideoMode(800, 600, 32), "ToT");
+                // Setup event handlers
+                win.Closed += new EventHandler(OnClosed);
+                Login login = new Login(win);
+                while (win.IsOpen)
+                {
+                    win.DispatchEvents();
+                    
                     win.Clear();
+                    login.Draw();
                     win.Display();
 
                 }

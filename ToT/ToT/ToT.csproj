@@ -56,9 +56,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Login.cs" />
     <Compile Include="MessageBuffer.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="recvops.cs" />
+    <Compile Include="UITextBox.cs" />
+    <Compile Include="UIWindow.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
