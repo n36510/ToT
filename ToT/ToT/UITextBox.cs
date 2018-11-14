@@ -46,7 +46,7 @@ namespace ToT
             this.displayText.Color = Color.Black;
             this.displayText.Position = new SFML.System.Vector2f(uiw.winX + xx, uiw.winY + yy);
             this.displayText.CharacterSize = 12;
-            this.tBox = new RectangleShape(new SFML.System.Vector2f(width, 15));
+            this.tBox = new RectangleShape(new SFML.System.Vector2f(width, 25));
             this.tBox.FillColor = Color.White;
             this.tBox.Position = new SFML.System.Vector2f(uiw.winX + xx, uiw.winY +yy);
             win.TextEntered += new EventHandler<TextEventArgs>(KeyboardInput);

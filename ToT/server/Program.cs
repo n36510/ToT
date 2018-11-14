@@ -38,11 +38,12 @@ namespace server
                     short opcode = b.ReadInt16();
 
                     if (opcode != 0) {
-
-                    switch (opcode)
+                        PacketHandler packet = new PacketHandler();
+                        switch (opcode)
                     {
                         case (short)recvOps.login:
                             {
+                                    packet.doLogin(b, c); 
                                 break;
                             }
                         case (short)recvOps.selectWorld:

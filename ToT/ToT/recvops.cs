@@ -25,6 +25,7 @@ namespace ToT
     enum recvOps
     {
         login = 0x0001,
-        selectWorld = 0x0002
+        selectWorld = 0x0002,
+        selectChar = 0x0003
     }
 }

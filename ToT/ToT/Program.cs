@@ -70,7 +70,7 @@ namespace ToT
                 RenderWindow win = new RenderWindow(new SFML.Window.VideoMode(800, 600, 32), "ToT");
                 // Setup event handlers
                 win.Closed += new EventHandler(OnClosed);
-                Login login = new Login(win);
+                Login login = new Login(win, client);
                 while (win.IsOpen)
                 {
                     win.DispatchEvents();

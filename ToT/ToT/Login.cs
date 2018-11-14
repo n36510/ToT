@@ -20,7 +20,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SFML.Graphics;
-
+using System.Net.Sockets;
 namespace ToT
 {
     class Login
@@ -28,20 +28,33 @@ namespace ToT
         UIWindow win;
         UITextBox username;
         UITextBox password;
+        UIButton btn;
         RenderWindow rw;
-        public Login(RenderWindow w)
+        TcpClient client;
+        public Login(RenderWindow w, TcpClient c)
         {
+            client = c;
             win = new UIWindow(w, 300, 200, 250, 350, "Login");
             username = new UITextBox(w, win, 10, 50, 250, false);
             password = new UITextBox(w, win, 10, 100, 250, true);
+            btn = new UIButton(w, win, 10, 150, 100, 25, doLogin, "Log In");
         }
-
+        void doLogin()
+        {
+            byte[] buffer = new byte[1024];
+            MessageBuffer b = new MessageBuffer(buffer);
+            b.WriteInt16((short)0x0001);
+            b.WriteString(username.text);
+            b.WriteString(password.text);
+            client.Client.Send(buffer);
+        }
         public void Draw()
         {
             
             win.Draw();
             username.Draw();
             password.Draw();
+            btn.Draw();
         }
     }
 }
