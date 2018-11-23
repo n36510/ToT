@@ -27,6 +27,8 @@ namespace server
         {
             // TODO: Create a ByteBuffer Class;
 
+            string accountName = "";
+
             byte[] data = new byte[1024];
             Console.WriteLine("Client connected from: " + c.Client.RemoteEndPoint);
             for(; ;)
@@ -43,13 +45,33 @@ namespace server
                     {
                         case (short)recvOps.login:
                             {
-                                    packet.doLogin(b, c); 
+                                    packet.doLogin(b, c, accountName); 
                                 break;
                             }
                         case (short)recvOps.selectWorld:
                             {
                                 break;
                             }
+                            case (short)0x0004:
+                                {
+                                    packet.sendWorlds(c);
+                                    break;
+                                }
+                            case (short)0x0005:
+                                {
+                                    Console.WriteLine("World Selected: "+b.ReadByte());
+                                    byte[] p = new byte[1024];
+                                    MessageBuffer message = new MessageBuffer(p);
+                                    message.WriteInt16((short)0x0005);
+                                    c.Client.Send(p);
+                                    break;
+                                }
+                            case (short)0x0006:
+                                {
+                                    Console.WriteLine(accountName + ": " + b.ReadString() );
+                                    break;
+
+                                }
                         default:
                             {
                                 Console.WriteLine("Unknown Packet: " + opcode);

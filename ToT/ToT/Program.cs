@@ -27,6 +27,12 @@ namespace ToT
     class Program
     {
         static TcpClient client;
+        static Login login;
+        static WorldSelect world;
+        static RenderWindow win;
+        static bool isWorldSelect = false;
+        static bool isLogin = true;
+        static Chat chat;
         static void threadMain()
         {
             byte[] data = new byte[1024];
@@ -40,10 +46,42 @@ namespace ToT
                     {
                         case (short)recvOps.login:
                             {
+                                byte status = b.ReadByte();
+
+                                if(status == 1)
+                                {
+                                    login.win.visible = false;
+                                    world = new WorldSelect(win, client);
+                                    isLogin = false;
+                                    isWorldSelect = true;
+                                    byte[] pack = new byte[1024];
+                                    MessageBuffer p = new MessageBuffer(pack);
+                                    p.WriteInt16((short)0x0004);
+                                    p.WriteByte(0x00);
+                                    client.Client.Send(pack);
+                                } else
+                                {
+                                    Console.WriteLine("Invalid Password...");
+                                }
+
                                 break;
                             }
                         case (short)recvOps.selectWorld:
                             {
+                                break;
+                            }
+                        case (short)recvOps.worldList:
+                            {
+                                byte id = b.ReadByte();
+                                Sprite sprite = new Sprite(new Texture("Sprites/worlds/"+id+".png"));
+                                world.worlds.Add(sprite);
+                                break;
+                            }
+                        case (short)0x0005:
+                            {
+                               
+                                chat = new Chat(win, client);
+                                isWorldSelect = false;
                                 break;
                             }
                         default:
@@ -67,16 +105,30 @@ namespace ToT
 
                 Thread t = new Thread(new ThreadStart(() => { threadMain(); }));
                 t.Start();
-                RenderWindow win = new RenderWindow(new SFML.Window.VideoMode(800, 600, 32), "ToT");
+                win = new RenderWindow(new SFML.Window.VideoMode(800, 600, 32), "ToT");
                 // Setup event handlers
                 win.Closed += new EventHandler(OnClosed);
-                Login login = new Login(win, client);
+                login = new Login(win, client);
                 while (win.IsOpen)
                 {
                     win.DispatchEvents();
-                    
+                    if (isWorldSelect)
+                    {
+                        world.Update();
+                    }
                     win.Clear();
-                    login.Draw();
+                    if (isLogin)
+                    {
+                        login.Draw();
+                    } else if (isWorldSelect)
+                    {
+                        world.Draw();
+                    }
+                    if (!isLogin && !isWorldSelect)
+                    {
+                        chat.Draw();
+                    }
+
                     win.Display();
 
                 }

@@ -56,6 +56,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Chat.cs" />
     <Compile Include="Login.cs" />
     <Compile Include="MessageBuffer.cs" />
     <Compile Include="Program.cs" />
@@ -64,6 +65,7 @@
     <Compile Include="UIButton.cs" />
     <Compile Include="UITextBox.cs" />
     <Compile Include="UIWindow.cs" />
+    <Compile Include="WorldSelect.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

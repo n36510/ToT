@@ -15,6 +15,7 @@ namespace ToT
         int x, y;
         RenderWindow window;
         Action action;
+        UIWindow ui;
 
         private void doAction(Action func)
         {
@@ -23,6 +24,7 @@ namespace ToT
         }
         public UIButton(RenderWindow win, UIWindow w, int xx, int yy, int width, int height, Action doLogin, string txt)
         {
+            ui = w;
             x = w.winX + xx;
             y = w.winY + yy;
             btn = new RectangleShape(new SFML.System.Vector2f(width, height));
@@ -50,8 +52,11 @@ namespace ToT
 
         public void Draw()
         {
-            window.Draw(btn);
-            window.Draw(btnText);
+            if (ui.visible == true)
+            {
+                window.Draw(btn);
+                window.Draw(btnText);
+            }
         }
     }
 }

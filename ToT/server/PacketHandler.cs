@@ -31,7 +31,7 @@ namespace server
             
         }
 
-        public void doLogin(MessageBuffer b, TcpClient client)
+        public void doLogin(MessageBuffer b, TcpClient client, string accountName)
         {
             Console.WriteLine("Login Info Recieved");
             string userName = b.ReadString();
@@ -46,7 +46,7 @@ namespace server
                 {
                     string user = (string)rdr["user"];
                     string pass = (string)rdr["pass"];
-                    Console.WriteLine("DB: " + pass + " Input: " + passWord);
+                    //Console.WriteLine("DB: " + pass + " Input: " + passWord);
                    
                     if (pass == passWord)
                     {
@@ -56,6 +56,8 @@ namespace server
                         packet.WriteInt16((short)0x0001);
                         packet.WriteByte(1);
                         client.Client.Send(p);
+
+                        accountName = user;
                     } else
                     {
                         Console.WriteLine("Invalid Password for account " + user + " from " + client.Client.RemoteEndPoint);
@@ -77,11 +79,20 @@ namespace server
                 byte[] p = new byte[1024];
                 MessageBuffer packet = new MessageBuffer(p);
                 packet.WriteInt16((short)0x0001);
-                packet.WriteByte(0);
+                packet.WriteByte(1);
                 client.Client.Send(p);
+                accountName = userName;
             }
             
             mysql.Close();
+        }
+        public void sendWorlds(TcpClient c)
+        {
+            byte[] response = new byte[1024];
+            MessageBuffer b = new MessageBuffer(response);
+            b.WriteInt16((short)0x0004);
+            b.WriteByte(0);
+            c.Client.Send(response);
         }
     }
 }

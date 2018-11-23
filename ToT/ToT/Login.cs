@@ -25,7 +25,7 @@ namespace ToT
 {
     class Login
     {
-        UIWindow win;
+        public UIWindow win;
         UITextBox username;
         UITextBox password;
         UIButton btn;
@@ -47,6 +47,9 @@ namespace ToT
             b.WriteString(username.text);
             b.WriteString(password.text);
             client.Client.Send(buffer);
+
+            
+
         }
         public void Draw()
         {

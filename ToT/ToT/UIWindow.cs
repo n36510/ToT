@@ -28,7 +28,7 @@ namespace ToT
         RectangleShape winContent;
         RectangleShape titleBar;
         Text winTitle;
-
+        public bool visible = true;
         public int winX, winY;
 
         public UIWindow(RenderWindow w, int width, int height, int x, int y, string title)
@@ -59,12 +59,13 @@ namespace ToT
 
         public void Draw()
         {
+            if (visible)
+            {
+                win.Draw(titleBar);
+                win.Draw(winContent);
 
-            win.Draw(titleBar);
-            win.Draw(winContent);
-
-            win.Draw(winTitle);
-
+                win.Draw(winTitle);
+            }
         }
 
     }

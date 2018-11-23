@@ -26,6 +26,7 @@ namespace ToT
     {
         login = 0x0001,
         selectWorld = 0x0002,
-        selectChar = 0x0003
+        selectChar = 0x0003,
+        worldList = 0x0004
     }
 }

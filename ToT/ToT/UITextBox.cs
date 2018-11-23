@@ -30,14 +30,18 @@ namespace ToT
         private Text displayText;
         public string text;
         private string pText;
-        bool isFocused = false;
+        public bool isFocused = false;
         bool password;
         int x, y;
         RectangleShape tBox;
         int w;
+        UIWindow ui;
+
         RenderWindow window;
         public UITextBox(RenderWindow win, UIWindow uiw, int xx, int yy, int width, bool pass)
         {
+            ui = uiw;
+
             this.password = pass;
             window = win;
             this.w = width;
@@ -133,8 +137,11 @@ namespace ToT
         }
         public void Draw()
         {
-            window.Draw(this.tBox);
-            window.Draw(this.displayText);
+            if (ui.visible == true)
+            {
+                window.Draw(this.tBox);
+                window.Draw(this.displayText);
+            }
         }
 
     }
