@@ -133,7 +133,12 @@ namespace ToT
 
         public void Update()
         {
-            
+            if (!password)
+            {
+                this.displayText.DisplayedString = text;
+            }
+
+                
         }
         public void Draw()
         {

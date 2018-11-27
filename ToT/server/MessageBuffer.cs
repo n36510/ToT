@@ -1,277 +1,352 @@
-/*
- * Copyright 2018 James D Pennington Jr.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 using System;
-using System.Text;
+using System.IO;
+using System.Net;
 
-/// <summary>
-/// This class handles byte buffer arrays.
-/// </summary>
-public class MessageBuffer
+namespace server
 {
-	/// <summary>
-	/// The byte buffer.
-	/// </summary>
-	public byte[] Buffer { get; private set; }
-	/// <summary>
-	/// Returns the buffer size in bytes.
-	/// </summary>
-	public int Size { get { return Buffer.Length; } }
-	/// <summary>
-	/// The reading and writing position.
-	/// </summary>
-	public int Position { get; set; } = 0;
+    public class MessageBuffer : IDisposable
+    {
+        private int position;
+        private MemoryStream Stream { get; set; }
+        private BinaryWriter Writer { get; set; }
+        private BinaryReader Reader { get; set; }
 
-	/// <summary>
-	/// Create a MessageBuffer with an existing byte buffer.
-	/// </summary>
-	/// <param name="buffer">The byte buffer to use.</param>
-	public MessageBuffer(byte[] buffer)
-	{
-		Buffer = buffer;
-	}
+        public byte[] Array { get; private set; }
+        public int Offset { get; private set; }
+        public int Capacity { get; private set; }
+        public int Limit { get; set; }
+        public bool HasFlipped { get; private set; }
 
-	/// <summary>
-	/// Reads a byte from the current buffer position.
-	/// </summary>
-	/// <returns>Returns the value.</returns>
-	public byte ReadByte()
-	{
-		var value = Buffer[Position];
-		Position++;
+        public int Position
+        {
+            get
+            {
+                return position;
+            }
+            set
+            {
+                this.position = value;
+                this.Stream.Position = this.Position + this.Offset;
+            }
+        }
 
-		return value;
-	}
+        public int Remaining
+        {
+            get
+            {
+                return this.Limit - this.Position;
+            }
+        }
 
-	/// <summary>
-	/// Reads a signed byte from the current buffer position.
-	/// </summary>
-	/// <returns>Returns the value.</returns>
-	public sbyte ReadSByte()
-	{
-		var value = (sbyte)Buffer[Position];
-		Position++;
+        public MessageBuffer(int capacity = 1024)
+        {
+            this.Capacity = capacity;
+            this.Array = new byte[this.Capacity];
 
-		return value;
-	}
+            this.Stream = new MemoryStream(this.Array);
+            this.Writer = new BinaryWriter(this.Stream);
+            this.Reader = new BinaryReader(this.Stream);
 
-	/// <summary>
-	/// Reads an unsigned short from the current buffer position.
-	/// </summary>
-	/// <returns>Returns the value.</returns>
-	public ushort ReadUInt16()
-	{
-		var value = BitConverter.ToUInt16(Buffer, Position);
-		Position += 2;
+            this.Limit = this.Capacity;
+            this.Offset = 0;
+            this.Position = 0;
+        }
 
-		return value;
-	}
+        public MessageBuffer(byte[] data)
+        {
+            this.Capacity = data.Length;
+            this.Array = data;
 
-	/// <summary>
-	/// Reads a signed short from the current buffer position.
-	/// </summary>
-	/// <returns>Returns the value.</returns>
-	public short ReadInt16()
-	{
-		var value = BitConverter.ToInt16(Buffer, Position);
-		Position += 2;
+            this.Stream = new MemoryStream(this.Array);
+            this.Writer = new BinaryWriter(this.Stream);
+            this.Reader = new BinaryReader(this.Stream);
 
-		return value;
-	}
+            this.Limit = this.Capacity;
+            this.Offset = 0;
+            this.Position = 0;
+        }
 
-	/// <summary>
-	/// Reads an unsigned int from the current buffer position.
-	/// </summary>
-	/// <returns>Returns the value.</returns>
-	public uint ReadUInt32()
-	{
-		var value = BitConverter.ToUInt32(Buffer, Position);
-		Position += 4;
+        private MessageBuffer(byte[] array, int offset, int capacity)
+        {
+            this.Array = array;
 
-		return value;
-	}
+            this.Stream = new MemoryStream(this.Array);
+            this.Writer = new BinaryWriter(this.Stream);
+            this.Reader = new BinaryReader(this.Stream);
 
-	/// <summary>
-	/// Reads a signed int from the current buffer position.
-	/// </summary>
-	/// <returns>Returns the value.</returns>
-	public int ReadInt32()
-	{
-		var value = BitConverter.ToInt32(Buffer, Position);
-		Position += 4;
+            this.Offset = offset;
+            this.Capacity = capacity;
+            this.Limit = this.Capacity;
+            this.Position = 0;
+        }
 
-		return value;
-	}
+        public byte this[int index]
+        {
+            get
+            {
+                return this.Array[index];
+            }
+            set
+            {
+                this.Array[index] = value;
+            }
+        }
 
-	/// <summary>
-	/// Reads a float from the current buffer position.
-	/// </summary>
-	/// <returns>Returns the value.</returns>
-	public float ReadFloat()
-	{
-		var value = BitConverter.ToSingle(Buffer, Position);
-		Position += 4;
+        public byte[] GetContent()
+        {
+            byte[] ba = new byte[Array.Length];
+            Buffer.BlockCopy(this.Array, 0, ba, 0, this.Array.Length);
+            return ba;
+        }
 
-		return value;
-	}
+        public void Skip(int count)
+        {
+            this.Position += count;
+        }
 
-	/// <summary>
-	/// Reads a double from the current buffer position.
-	/// </summary>
-	/// <returns>Returns the value.</returns>
-	public double ReadDouble()
-	{
-		var value = BitConverter.ToDouble(Buffer, Position);
-		Position += 8;
+        public void Flip()
+        {
+            this.Limit = this.Position;
+            this.Position = 0;
+            this.HasFlipped = true;
+        }
 
-		return value;
-	}
+        public void SafeFlip()
+        {
+            if (!this.HasFlipped)
+            {
+                this.Flip();
+            }
+        }
 
-	/// <summary>
-	/// Reads a bool from the current buffer position.
-	/// </summary>
-	/// <returns>Returns the value.</returns>
-	public bool ReadBoolean()
-	{
-		var value = BitConverter.ToBoolean(Buffer, Position);
-		Position++;
+        public MessageBuffer Slice()
+        {
+            return new MessageBuffer(this.Array, this.Position, this.Remaining);
+        }
 
-		return value;
-	}
+        public void Dispose()
+        {
+            this.Reader.Dispose();
+            this.Writer.Dispose();
+            this.Stream.Dispose();
+        }
 
-	/// <summary>
-	/// Reads a string from the current buffer position.
-	/// </summary>
-	/// <returns>Returns the value.</returns>
-	public string ReadString()
-	{
-		int stringEnd = Array.IndexOf(Buffer, (byte)'\0', Position) + 1;
-		var value = Encoding.UTF8.GetString(Buffer, Position, stringEnd - Position);
-		Position += value.Length;
+        public void WriteBytes(params byte[] collection)
+        {
+            this.Writer.Write(collection);
+            this.Position += collection.Length;
+        }
 
-		return value;
-	}
+        public void WriteByte(byte item = 0)
+        {
+            this.Writer.Write(item);
+            this.Position += sizeof(byte);
+        }
 
-	/// <summary>
-	/// Writes a byte to the current buffer position.
-	/// </summary>
-	/// <param name="value">The value to write.</param>
-	public void WriteByte(byte value)
-	{
-		Buffer[Position] = value;
-		Position++;
-	}
+        public void WriteSByte(sbyte item = 0)
+        {
+            this.Writer.Write(item);
+            this.Position += sizeof(sbyte);
+        }
 
-	/// <summary>
-	/// Writes a signed byte to the current buffer position.
-	/// </summary>
-	/// <param name="value">The value to write.</param>
-	public void WriteSByte(sbyte value)
-	{
-		Buffer[Position] = (byte)value;
-		Position++;
-	}
+        public void WriteShort(short item = 0)
+        {
+            this.Writer.Write(item);
+            this.Position += sizeof(short);
+        }
 
-	/// <summary>
-	/// Writes an unsigned short to the current buffer position.
-	/// </summary>
-	/// <param name="value">The value to write.</param>
-	public void WriteUInt16(ushort value)
-	{
-		byte[] bytes = BitConverter.GetBytes(value);
-		Array.Copy(bytes, 0, Buffer, Position, 2);
-		Position += 2;
-	}
+        public void WriteUShort(ushort item = 0)
+        {
+            this.Writer.Write(item);
+            this.Position += sizeof(ushort);
+        }
 
-	/// <summary>
-	/// Writes a signed short to the current buffer position.
-	/// </summary>
-	/// <param name="value">The value to write.</param>
-	public void WriteInt16(short value)
-	{
-		byte[] bytes = BitConverter.GetBytes(value);
-		Array.Copy(bytes, 0, Buffer, Position, 2);
-		Position += 2;
-	}
+        public void WriteInt(int item = 0)
+        {
+            this.Writer.Write(item);
+            this.Position += sizeof(int);
+        }
 
-	/// <summary>
-	/// Writes an unsigned int to the current buffer position.
-	/// </summary>
-	/// <param name="value">The value to write.</param>
-	public void WriteUInt32(uint value)
-	{
-		byte[] bytes = BitConverter.GetBytes(value);
-		Array.Copy(bytes, 0, Buffer, Position, 4);
-		Position += 4;
-	}
-	
-	/// <summary>
-	/// Writes a signed int to the current buffer position.
-	/// </summary>
-	/// <param name="value">The value to write.</param>
-	public void WriteInt32(int value)
-	{
-		byte[] bytes = BitConverter.GetBytes(value);
-		Array.Copy(bytes, 0, Buffer, Position, 4);
-		Position += 4;
-	}
+        public void WriteUInt(uint item = 0)
+        {
+            this.Writer.Write(item);
+            this.Position += sizeof(uint);
+        }
 
-	/// <summary>
-	/// Writes a float to the current buffer position.
-	/// </summary>
-	/// <param name="value">The value to write.</param>
-	public void WriteFloat(float value)
-	{
-		byte[] bytes = BitConverter.GetBytes(value);
-		Array.Copy(bytes, 0, Buffer, Position, 4);
-		Position += 4;
-	}
+        public void WriteLong(long item = 0)
+        {
+            this.Writer.Write(item);
+            this.Position += sizeof(long);
+        }
 
-	/// <summary>
-	/// Writes a double to the current buffer position.
-	/// </summary>
-	/// <param name="value">The value to write.</param>
-	public void WriteDouble(double value)
-	{
-		byte[] bytes = BitConverter.GetBytes(value);
-		Array.Copy(bytes, 0, Buffer, Position, 8);
-		Position += 8;
-	}
+        public void WriteFloat(float item = 0)
+        {
+            this.Writer.Write(item);
+            this.Position += sizeof(float);
+        }
 
-	/// <summary>
-	/// Writes a boolean to the current buffer position.
-	/// </summary>
-	/// <param name="value">The value to write.</param>
-	public void WriteBoolean(bool value)
-	{
-		byte[] bytes = BitConverter.GetBytes(value);
-		Array.Copy(bytes, 0, Buffer, Position, 1);
-		Position += 1;
-	}
+        public void WriteBool(bool item)
+        {
+            this.Writer.Write(item);
+            this.Position += sizeof(bool);
+        }
 
-	/// <summary>
-	/// Writes a null terminated string to the current buffer position.
-	/// </summary>
-	/// <param name="value">The value to write.</param>
-	public void WriteString(string value)
-	{
-		value = value.Replace("\0", "\\0");
+        public void WriteString(string item, params object[] args)
+        {
+            if (item != null)
+            {
+                item = string.Format(item, args);
+            }
 
-		byte[] bytes = Encoding.UTF8.GetBytes(value + '\0');
-		Array.Copy(bytes, 0, Buffer, Position, bytes.Length);
-		Position += bytes.Length;
-	}
+            this.Writer.Write((short)item.Length);
+
+            foreach (char c in item)
+            {
+                this.Writer.Write(c);
+            }
+
+            this.Position += item.Length + sizeof(short);
+        }
+
+        public void WriteStringFixed(string item, int length)
+        {
+            foreach (char c in item)
+            {
+                this.Writer.Write(c);
+            }
+
+            for (int i = item.Length; i < length; i++)
+            {
+                this.Writer.Write((byte)0);
+            }
+
+            this.Position += length;
+        }
+
+        public void WriteIntDateTime(DateTime item)
+        {
+            string time = item.Year.ToString();
+            time += item.Month < 10 ? ("0" + item.Month.ToString()) : item.Month.ToString();
+            time += item.Day < 10 ? ("0" + item.Day.ToString()) : item.Day.ToString();
+            time += item.Hour < 10 ? ("0" + item.Hour.ToString()) : item.Hour.ToString();
+            this.Writer.Write(int.Parse(time));
+            this.Position += sizeof(int);
+        }
+
+        public void WriteLongDateTime(DateTime item)
+        {
+            this.Writer.Write((long)((item.Millisecond * 10000) + 116444592000000000L));
+            this.Position += sizeof(long);
+        }
+
+        public void WriteKoreanDateTime(DateTime item)
+        {
+            this.Writer.Write((long)(item.ToUniversalTime() - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalMilliseconds * 10000 + 116444592000000000L);
+            this.Position += sizeof(long);
+        }
+
+        public void WriteIPAddress(IPAddress value)
+        {
+            this.Writer.Write(value.GetAddressBytes());
+            this.Position += 4;
+        }
+
+        public byte[] ReadBytes(int count)
+        {
+            byte[] result = this.Reader.ReadBytes(count);
+            this.Position += count;
+            return result;
+        }
+
+        public byte[] ReadBytes()
+        {
+            return this.ReadBytes(this.Remaining);
+        }
+
+        public byte ReadByte()
+        {
+            byte result = this.Reader.ReadByte();
+            this.Position += sizeof(byte);
+            return result;
+        }
+
+        public sbyte ReadSByte()
+        {
+            sbyte result = this.Reader.ReadSByte();
+            this.Position += sizeof(sbyte);
+            return result;
+        }
+
+        public short ReadShort()
+        {
+            short result = this.Reader.ReadInt16();
+            this.Position += sizeof(short);
+            return result;
+        }
+
+        public ushort ReadUShort()
+        {
+            ushort result = this.Reader.ReadUInt16();
+            this.Position += sizeof(ushort);
+            return result;
+        }
+
+        public int ReadInt()
+        {
+            int result = this.Reader.ReadInt32();
+            this.Position += sizeof(int);
+            return result;
+        }
+
+        public uint ReadUInt()
+        {
+            uint result = this.Reader.ReadUInt32();
+            this.Position += sizeof(uint);
+            return result;
+        }
+
+        public long ReadLong()
+        {
+            long result = this.Reader.ReadInt64();
+            this.Position += sizeof(long);
+            return result;
+        }
+
+        public float ReadFloat()
+        {
+            float result = this.Reader.ReadSingle();
+            this.Position += sizeof(float);
+            return result;
+        }
+
+        public bool ReadBool()
+        {
+            bool result = this.Reader.ReadBoolean();
+            this.Position += sizeof(bool);
+            return result;
+        }
+
+        public string ReadString()
+        {
+            short count = this.Reader.ReadInt16();
+
+            char[] result = new char[count];
+
+            for (int i = 0; i < count; i++)
+            {
+                result[i] = (char)this.Reader.ReadByte();
+            }
+
+            this.Position += count + sizeof(short);
+
+            return new string(result);
+        }
+
+        public IPAddress ReadIPAddress()
+        {
+            IPAddress result = new IPAddress(this.Reader.ReadBytes(4));
+            this.Position += 4;
+            return result;
+        }
+    }
 }

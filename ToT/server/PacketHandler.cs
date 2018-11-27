@@ -31,11 +31,10 @@ namespace server
             
         }
 
-        public void doLogin(MessageBuffer b, TcpClient client, string accountName)
+        public void doLogin(TcpClient client, string userName, string passWord)
         {
             Console.WriteLine("Login Info Recieved");
-            string userName = b.ReadString();
-            string passWord = b.ReadString();
+            
             mysql.Open();
             string sql = "SELECT * FROM user WHERE user='"+userName+"'";
             MySqlCommand cmd = new MySqlCommand(sql, mysql);
@@ -52,19 +51,23 @@ namespace server
                     {
                         Console.WriteLine("User " + user + " logged on from " + client.Client.RemoteEndPoint);
                         byte[] p = new byte[1024];
-                        MessageBuffer packet = new MessageBuffer(p);
-                        packet.WriteInt16((short)0x0001);
+                        MessageBuffer packet = new MessageBuffer();
+                        packet.WriteShort((short)0x0001);
                         packet.WriteByte(1);
+                        p = packet.GetContent();
                         client.Client.Send(p);
+                       
+                        Program.clients.Add(new Session(client, user));
 
-                        accountName = user;
+                        //accountName = user;
                     } else
                     {
                         Console.WriteLine("Invalid Password for account " + user + " from " + client.Client.RemoteEndPoint);
                         byte[] p = new byte[1024];
-                        MessageBuffer packet = new MessageBuffer(p);
-                        packet.WriteInt16((short)0x0001);
+                        MessageBuffer packet = new MessageBuffer();
+                        packet.WriteShort((short)0x0001);
                         packet.WriteByte(2);
+                        p = packet.GetContent();
                         client.Client.Send(p);
                     }
                 }
@@ -77,11 +80,13 @@ namespace server
                 MySqlCommand insert = new MySqlCommand(ins, mysql);
                 insert.ExecuteReader();
                 byte[] p = new byte[1024];
-                MessageBuffer packet = new MessageBuffer(p);
-                packet.WriteInt16((short)0x0001);
+                MessageBuffer packet = new MessageBuffer();
+                packet.WriteShort((short)0x0001);
                 packet.WriteByte(1);
+                p = packet.GetContent();
                 client.Client.Send(p);
-                accountName = userName;
+                Program.clients.Add(new Session(client, userName));
+                // accountName = userName;
             }
             
             mysql.Close();
@@ -89,9 +94,10 @@ namespace server
         public void sendWorlds(TcpClient c)
         {
             byte[] response = new byte[1024];
-            MessageBuffer b = new MessageBuffer(response);
-            b.WriteInt16((short)0x0004);
+            MessageBuffer b = new MessageBuffer();
+            b.WriteShort((short)0x0004);
             b.WriteByte(0);
+            response = b.GetContent();
             c.Client.Send(response);
         }
     }

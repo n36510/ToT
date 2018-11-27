@@ -41,7 +41,7 @@ namespace ToT
                 try {
                     client.Client.Receive(data);
                     MessageBuffer b = new MessageBuffer(data);
-                    short opcode = b.ReadInt16();
+                    short opcode = b.ReadShort();
                     switch (opcode)
                     {
                         case (short)recvOps.login:
@@ -56,7 +56,7 @@ namespace ToT
                                     isWorldSelect = true;
                                     byte[] pack = new byte[1024];
                                     MessageBuffer p = new MessageBuffer(pack);
-                                    p.WriteInt16((short)0x0004);
+                                    p.WriteShort((short)0x0004);
                                     p.WriteByte(0x00);
                                     client.Client.Send(pack);
                                 } else
@@ -84,6 +84,15 @@ namespace ToT
                                 isWorldSelect = false;
                                 break;
                             }
+                        case (short)0x0006:
+                            {
+                                string name = b.ReadString();
+                                string msg = b.ReadString();
+                                string add = name + ": " + msg;
+                                Console.WriteLine(add);
+                                chat.chatLog.Add(add);
+                                break;
+                            }
                         default:
                             {
                                 break;
@@ -105,7 +114,13 @@ namespace ToT
 
                 Thread t = new Thread(new ThreadStart(() => { threadMain(); }));
                 t.Start();
-                win = new RenderWindow(new SFML.Window.VideoMode(800, 600, 32), "ToT");
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("An Error Occured: " + e.Message, "ToT");
+                return;
+            }
+            win = new RenderWindow(new SFML.Window.VideoMode(800, 600, 32), "ToT");
                 // Setup event handlers
                 win.Closed += new EventHandler(OnClosed);
                 login = new Login(win, client);
@@ -116,9 +131,11 @@ namespace ToT
                     {
                         world.Update();
                     }
+                    
                     win.Clear();
                     if (isLogin)
                     {
+                       
                         login.Draw();
                     } else if (isWorldSelect)
                     {
@@ -126,18 +143,14 @@ namespace ToT
                     }
                     if (!isLogin && !isWorldSelect)
                     {
+                        chat.Update();
                         chat.Draw();
                     }
 
                     win.Display();
 
                 }
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show("An Error Occured: " + e.Message, "ToT");
-                return;
-            }
+           
         }
 
         private static void OnClosed(object sender, EventArgs e)

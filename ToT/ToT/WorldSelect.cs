@@ -29,9 +29,10 @@ namespace ToT
                 {
                     byte[] p = new byte[1024];
                     Console.WriteLine("World " + i + " selected.");
-                    MessageBuffer b = new MessageBuffer(p);
-                    b.WriteInt16(0x0005);
+                    MessageBuffer b = new MessageBuffer();
+                    b.WriteShort((short)0x0005);
                     b.WriteByte((byte)i);
+                    p = b.GetContent();
                     c.Client.Send(p);
                 }
                 i++;

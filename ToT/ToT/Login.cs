@@ -42,10 +42,11 @@ namespace ToT
         void doLogin()
         {
             byte[] buffer = new byte[1024];
-            MessageBuffer b = new MessageBuffer(buffer);
-            b.WriteInt16((short)0x0001);
+            MessageBuffer b = new MessageBuffer();
+            b.WriteShort((short)0x0001);
             b.WriteString(username.text);
             b.WriteString(password.text);
+            buffer = b.GetContent();
             client.Client.Send(buffer);
 
             

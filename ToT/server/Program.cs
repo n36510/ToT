@@ -18,17 +18,20 @@
 using System;
 using System.Threading;
 using System.Net.Sockets;
+using System.Collections.Generic;
 
 namespace server
 {
     class Program
     {
+        public static List<Session> clients = new List<Session>();
+
         static void mainThread(TcpClient c)
         {
             // TODO: Create a ByteBuffer Class;
 
             string accountName = "";
-
+            string passWord = "";
             byte[] data = new byte[1024];
             Console.WriteLine("Client connected from: " + c.Client.RemoteEndPoint);
             for(; ;)
@@ -37,7 +40,7 @@ namespace server
                 {
                     c.Client.Receive(data);
                     MessageBuffer b = new MessageBuffer(data);
-                    short opcode = b.ReadInt16();
+                    short opcode = b.ReadShort();
 
                     if (opcode != 0) {
                         PacketHandler packet = new PacketHandler();
@@ -45,11 +48,9 @@ namespace server
                     {
                         case (short)recvOps.login:
                             {
-                                    packet.doLogin(b, c, accountName); 
-                                break;
-                            }
-                        case (short)recvOps.selectWorld:
-                            {
+                                    accountName = b.ReadString();
+                                    passWord = b.ReadString();
+                                    packet.doLogin(c, accountName, passWord);
                                 break;
                             }
                             case (short)0x0004:
@@ -61,14 +62,27 @@ namespace server
                                 {
                                     Console.WriteLine("World Selected: "+b.ReadByte());
                                     byte[] p = new byte[1024];
-                                    MessageBuffer message = new MessageBuffer(p);
-                                    message.WriteInt16((short)0x0005);
+                                    MessageBuffer message = new MessageBuffer();
+                                    message.WriteInt((short)0x0005);
+                                    p = message.GetContent();
                                     c.Client.Send(p);
                                     break;
                                 }
                             case (short)0x0006:
                                 {
-                                    Console.WriteLine(accountName + ": " + b.ReadString() );
+
+                                    string message = b.ReadString();
+                                    Console.WriteLine(accountName + ": " + message);
+                                    byte[] p = new byte[1024];
+                                    MessageBuffer msg = new MessageBuffer();
+                                    msg.WriteShort((short)0x0006);
+                                    msg.WriteString(accountName);
+                                    msg.WriteString(message);
+                                    p = msg.GetContent();
+                                    foreach(Session sess in clients)
+                                    {
+                                        sess.c.Client.Send(p);
+                                    }
                                     break;
 
                                 }
